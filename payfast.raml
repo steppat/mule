@@ -1,8 +1,8 @@
 #%RAML 0.8
+baseUri: http://mocksvc.mulesoft.com/mocks/a296cd19-32ae-4c10-ba8a-ffb527bd4f24
 title: pagamentos
 version: 1.0
 mediaType: application/json
-
 
 /pagamentos:
   get:
@@ -12,13 +12,27 @@ mediaType: application/json
         type: date
         required: false
         displayName: Data para filtra dd-mm-yyyy
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"pagamentos" :
+                { "pagamento" : {
+                    "id" : "1",
+                    "status" : "CRIADO",
+                    "valor"  : "39.9"
+                }
+              }
+              
   post:
     description: Para inserir um novo pagamentos
     body:
       application/json:
         example: |
-          {"transacao": {
-              "valor": "21.9"
+          {"transacao" : {
+              "titular" : "Fulano",
+              "valor" : "21.9"
               }
           }
     responses:
@@ -27,8 +41,10 @@ mediaType: application/json
           application/json:
             example: |
               { "pagamento": {
-                  "status":"CRIADO"
-              }
+                  "id" : "1",
+                  "status":"CRIADO",
+                  "valor"  : "39.9"
+              }   
   /{id}:
     get:
       responses:
