@@ -1,0 +1,65 @@
+#%RAML 0.8
+title: pagamentos
+version: 1.0
+mediaType: application/json
+
+
+/pagamentos:
+  get:
+    description: Para receber todos os pagamentos
+    queryParameters:
+      data: 
+        type: date
+        required: false
+        displayName: Data para filtra dd-mm-yyyy
+  post:
+    description: Para inserir um novo pagamentos
+    body:
+      application/json:
+        example: |
+          {"transacao": {
+              "valor": "21.9"
+              }
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              { "pagamento": {
+                  "status":"CRIADO"
+              }
+  /{id}:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {"pagamento": {
+                    "status":"status here"
+                }       
+    patch:
+      description: para confirmar o pagamento
+      responses:  
+        200:
+          body:
+            application/json:
+              example: |
+                { "pagamento" :{
+                    "status":"CONFIRMADO"
+                    "outros atributos ...": "valor ..."
+                  }
+                }
+    delete:
+      description: para cancelar o pagamentos
+      responses:  
+        200:
+          body:
+            application/json:
+              example: |
+                { "pagamento" :{
+                    "status":"CANCELADO"
+                    "outros atributos ...": "valor ..."
+                  }
+                }
