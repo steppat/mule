@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+<!-- http://stackoverflow.com/questions/1332224/inserting-tags-into-soap-header-using-xslt -->
+<!-- http://www.mulesoft.org/documentation/display/current/XSLT+Transformer -->
+
+	<http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8888"  basePath="/mule" doc:name="HTTP Listener Configuration" />
+			
+	<http:request-config name="HTTP_request_Configuration" host="localhost" port="8080"/>
+
+	<flow name="Transform_Flow">
+		<http:listener config-ref="HTTP_Listener_Configuration"	path="EstoqueWS" doc:name="HTTP" />
+		<cxf:proxy-service payload="envelope" doc:name="SOAP Proxy Service" /><!-- ou body ou header -->
+                
+		<mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" outputEncoding="UTF-8" 
+		doc:name="Transform from inner response to outer response" xsl-file="estoque-header.xslt" 
+		encoding="UTF-8" returnClass="java.lang.String" />
+        
+        <logger level="INFO" doc:name="Logger2" message="Logger 2 - #[payload]"/>
+        
+        <cxf:proxy-client payload="envelope" doc:name="SOAP Proxy Client" />
+		<http:request config-ref="HTTP_request_Configuration" method="POST" path="fj36-webservice/EstoqueWS" doc:name="Wildlfy EstoqueWS"/>        
+	</flow>
+</mule>

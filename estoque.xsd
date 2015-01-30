@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tms="http://caelum.com.br/estoquews/v2" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://caelum.com.br/estoquews/v2">
+  <xs:element name="ItensPeloCodigo" type="tms:ItensPeloCodigo"></xs:element>
+  <xs:element name="ItensPeloCodigoResponse" type="tms:ItensPeloCodigoResponse"></xs:element>
+  <xs:complexType name="ItensPeloCodigo">
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="codigo" type="xs:string"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ItensPeloCodigoResponse">
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="ItemEstoque" type="tms:itemEstoque"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="itemEstoque">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="codigo" type="xs:string"></xs:element>
+      <xs:element minOccurs="0" name="quantidade" type="xs:int"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="token" nillable="true" type="xs:string"></xs:element>
+</xs:schema>

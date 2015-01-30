@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<http:listener-config name="HTTP_Listener" host="localhost" port="8880" doc:name="HTTP Listener Configuration" />
+	
+	<flow name="02-login-flowFlow">
+		<http:listener config-ref="HTTP_Listener" path="login" doc:name="HTTP">
+			<http:response-builder statusCode="200" reasonPhrase="Login sucessful">
+				<http:header headerName="date" value="#[server.dateTime]" />
+				<http:header headerName="expires" value="#[server.dateTime.plusDays(1)]" />
+			</http:response-builder>
+			<http:error-response-builder statusCode="#[errorStatusCode]" reasonPhrase="#[errorReasonPhrase]" />
+		</http:listener>
+        <logger message="Inbound: #[message.inboundProperties.'http.query.params'.user]" level="INFO" doc:name="Logger"/>
+<!--         <wildcard-filter pattern="*login" caseSensitive="true" doc:name="Wildcard"/> -->
+
+        <message-filter doc:name="Fail if person does not exists" throwOnUnaccepted="true" >	        		
+			<expression-filter expression="#[message.inboundProperties.'http.query.params'.user == 'mule']" />
+        </message-filter>
+		<set-payload doc:name="Set Payload" value="Sucessful" />
+        <logger message="Recieved ... #[payload]" level="INFO" doc:name="Logger"/>
+		
+		<rollback-exception-strategy doc:name="Rollback Exception Strategy">
+			<set-variable variableName="errorStatusCode" value="404" doc:name="Set status code" />
+			<set-variable variableName="errorReasonPhrase" value="Requested user does not exist" doc:name="Set reason phrase" />
+		</rollback-exception-strategy>
+	</flow>
+</mule>

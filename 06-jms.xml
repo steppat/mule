@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+
+<!-- http://java.dzone.com/articles/mule-esb-activemq-and-dlq -->
+<!-- http://stackoverflow.com/questions/5457659/send-message-from-java-program-to-activemq-using-mule -->
+
+	<http:listener-config name="HTTP_Listener_Configuration"
+		host="localhost" port="8880" basePath="/mule" doc:name="HTTP Listener Configuration" />
+
+<!-- simples -->
+
+	<jms:activemq-connector name="Active_MQ" 
+				brokerURL="tcp://localhost:61616"
+    specification="1.1"
+    maxRedelivery="30"
+    disableTemporaryReplyToDestinations="true"
+    createMultipleTransactedReceivers="true"
+    acknowledgementMode="CLIENT_ACKNOWLEDGE"
+    numberOfConcurrentTransactedReceivers="1"
+    persistentDelivery="true"/>
+	
+	<flow name="JMS">
+	    <jms:inbound-endpoint connector-ref="Active_MQ"  topic="LOJA.TOPIC" doc:name="Active MQ Inbound Endpoint">
+	        <jms:transaction action="BEGIN_OR_JOIN"/>
+	    </jms:inbound-endpoint>
+	
+	    <echo-component doc:name="Echo"/>
+	    
+	    <jms:outbound-endpoint connector-ref="Active_MQ" queue="/LOJA.QUEUE" doc:name="Active MQ Outbound Endpoint">
+			<jms:transaction action="ALWAYS_JOIN"/>
+	    </jms:outbound-endpoint>
+	</flow>	
+
+</mule>
