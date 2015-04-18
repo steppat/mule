@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+    
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" 
+    		basePath="/fj36-webservice" doc:name="HTTP Listener Configuration"/>
+    
+    <global-property name="namespace_v1" value="caelum.com.br/estoquews/v1" doc:name="Namespace V1"/>
+    <global-property name="namespace_v2" value="caelum.com.br/estoquews/v2" doc:name="Namespace V2"/>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8088" doc:name="HTTP Request Configuration"/>
+   
+    <flow name="fj36-estoque-proxyFlow2">
+    
+    
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/EstoqueWS" 
+        doc:name="EstoqueWS Listener" allowedMethods="POST"/>
+        <cxf:proxy-service doc:name="CXF Proxy" payload="envelope"/>
+        <mulexml:xslt-transformer xsl-file="/Users/nico/Documents/dev/workspaces/AnypointStudio_workspace/fj36-estoque-proxy/src/main/resources/soap-header.xslt" maxIdleTransformers="2" maxActiveTransformers="5" doc:name="Soap Header"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+        
+        <choice doc:name="Choice">
+           
+            <when expression="#[xpath3(&amp;quot;//*[contains(namespace-uri(), 'caelum.com.br/estoquews/v1')]&amp;quot;, payload, 'BOOLEAN' )]
+">
+                <logger message="V1" level="INFO" doc:name="Logger V1"/>
+                <http:request config-ref="HTTP_Request_Configuration" path="/v1/EstoqueWS" method="POST" doc:name="HTTP V1"/>
+            </when>
+            
+            <when expression="#[xpath3(&amp;quot;//*[contains(namespace-uri(), 'caelum.com.br/estoquews/v2')]&amp;quot;, payload, 'BOOLEAN' )]
+">
+                <logger message="V2" level="INFO" doc:name="Logger V2"/>
+                <http:request config-ref="HTTP_Request_Configuration" path="/v2/EstoqueWS" method="POST" doc:name="HTTP V2"/>
+            </when>
+            <otherwise>
+                <set-property propertyName="http.status" value="404" doc:name="404"/>
+            </otherwise>
+        </choice>
+    </flow>
+    
+</mule>
