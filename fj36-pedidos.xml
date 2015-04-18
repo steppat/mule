@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration" basePath="/fj36-pedidos"/>
+    <expression-filter expression="#[xpath3(&quot;/item/formato/text() = 'EBOOK'&quot;, message.payloadAs(java.lang.String),'BOOLEAN')]" name="EbookExpression" doc:name="Expression"/>
+    <mulexml:schema-validation-filter schemaLocations="pedido.xsd" doc:name="PedidoValidation" name="PedidoValidation" errorHandler-ref="schemaErrorHandler" />
+    <spring:beans>
+        <spring:bean id="schemaErrorHandler" name="schemaErrorHandler" class="br.com.caelum.handler.SchemaErrorHandler"/>
+    </spring:beans>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8089" basePath="/mule" doc:name="HTTP Request Configuration"/>
+   
+    <flow name="fj36-pedidosFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/" allowedMethods="POST" doc:name="Pedidos Listener" />
+        <logger message="init" level="INFO" doc:name="Logger"/>
+        <response>
+            <set-property propertyName="http.status" value="202" doc:name="Property"/>
+        </response>
+            <message-filter throwOnUnaccepted="true" doc:name="Valida&#231;&#227;o Pedido">
+                <filter   ref="PedidoValidation"/>
+            </message-filter> 
+            <scatter-gather doc:name="Scatter-Gather">	
+            <custom-aggregation-strategy class="br.com.caelum.aggr.SimpleResponseStrategy"/>
+                <flow-ref name="financeiro_flow" doc:name="financeiro_flow"/>
+                <flow-ref name="ebook_flow" doc:name="ebook_flow"/>
+            </scatter-gather>
+          <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger message="Falho no fluxo" level="ERROR" doc:name="Logger"/>
+            <set-property propertyName="http.status" value="400" doc:name="Property"/>
+ 			<set-payload value="Erro: #[exception.getSummaryMessage()]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+    <sub-flow name="ebook_flow">
+        <splitter expression="#[xpath3('//item', payload, 'NODESET')]" doc:name="Splitter"/>
+        <filter  doc:name="Filter Reference" ref="EbookExpression"/>
+        <json:xml-to-json-transformer doc:name="XML to JSON"/>
+        <logger message="Ebook Flow: #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/ebook" method="POST" doc:name="HTTP" parseResponse="false"/>
+    </sub-flow>
+    <sub-flow name="financeiro_flow">
+        <mulexml:xslt-transformer maxIdleTransformers="2" maxActiveTransformers="5" doc:name="XSLT" xsl-file="/Users/nico/Documents/dev/workspaces/AnypointStudio_workspace/fj36-pedidos/pedido-para-soap.xslt"/>
+        <logger message="Financeiro: #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/financeiro" method="POST" doc:name="HTTP"/>
+    </sub-flow>
+    
+</mule>
